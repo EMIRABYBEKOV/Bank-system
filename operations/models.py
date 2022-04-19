@@ -61,21 +61,21 @@ credit_choices = (
 )
 
 
-class CreditManager(models.Manager):
-    def save(self, user, salary, pledge, confidence, amount, paid, date_taking, date_payment):
-        # if user.
-        credit = self.model(
-            user=user,
-            salary=salary,
-            pledge=pledge,
-            confidence=confidence,
-            amount=amount,
-            paid=paid,
-            date_taking=date_taking,
-            date_payment=date_payment,
-                        )
-
-        credit.save(using=self._db)
+# class CreditManager(models.Manager):
+#     def save(self, user, salary, pledge, confidence, amount, paid, date_taking, date_payment):
+#         # if user.
+#         credit = self.model(
+#             user=user,
+#             salary=salary,
+#             pledge=pledge,
+#             confidence=confidence,
+#             amount=amount,
+#             paid=paid,
+#             date_taking=date_taking,
+#             date_payment=date_payment,
+#                         )
+#
+#         credit.save(using=self._db)
 
 
 class Credit(models.Model):
@@ -93,6 +93,11 @@ class Credit(models.Model):
 
     paid = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     date_payment = models.DateField()
+    every_month = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    notices = models.IntegerField(default=0)
+
+    # objects = CreditManager()
 
     def __str__(self):
         return f"{self.user}"
