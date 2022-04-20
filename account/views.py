@@ -19,11 +19,15 @@ class AccountRegistrationView(viewsets.ModelViewSet):
     http_method_names = ['post', 'head']
 
 
-class AccountView(generics.RetrieveUpdateDestroyAPIView):
+class AccountView(generics.RetrieveUpdateDestroyAPIView, generics.ListAPIView):
     queryset = Account.objects.all()
     serializer_class = serializers.UpdateRetrieveAccountSerializer
-    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly, permissions.IsAdminUser]
 
+class AccountListView(generics.ListAPIView):
+    queryset = Account.objects.all()
+    serializer_class = serializers.UpdateRetrieveAccountSerializer
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly, permissions.IsAdminUser]
 
 class SearchListView(generics.ListAPIView):
     queryset = Account.objects.all()

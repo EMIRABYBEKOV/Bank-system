@@ -4,7 +4,8 @@ from .views import (AccountRegistrationView,
                     AccountView,
                     # list_api,
                     send_mail_for_verification,
-                    check_code_for_verification)
+                    check_code_for_verification,
+                    AccountListView)
 from rest_framework.routers import DefaultRouter
 
 
@@ -14,9 +15,11 @@ router = DefaultRouter()
 router.register('register', AccountRegistrationView)
 
 urlpatterns = [
-    path('account/', include(router.urls)),
-    path('search/', SearchListView.as_view(), name='search'),
-    path('verification/', send_mail_for_verification),
-    path('check_code/', check_code_for_verification),
+    path('account', include(router.urls)),
+    path('account/list', AccountListView.as_view()),
+
+    path('search', SearchListView.as_view(), name='search'),
+    path('verification', send_mail_for_verification),
+    path('check_code', check_code_for_verification),
     path('account/<int:pk>', AccountView.as_view())
 ]
