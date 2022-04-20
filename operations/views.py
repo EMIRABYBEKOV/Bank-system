@@ -1,7 +1,7 @@
 from account.models import Account
-from rest_framework import viewsets,response, status, permissions
+from rest_framework import viewsets,response, status, permissions, mixins, generics
 from . import serializers
-from .models import Wallet, Transfer, send, Credit
+from .models import Wallet, Transfer, send, Credit, count_credit
 from . import utils
 from .currency_parser import get_currency
 
@@ -38,9 +38,12 @@ class CreateWallet(viewsets.ModelViewSet):
         if serializer.is_valid():
             if Account.objects.get(pk=int(serializer.data['user'])).verification is True:
                 account = Account.objects.get(pk=int(serializer.data['user']))
+                # if account.cards >= 3:
                 print(Account.username)
                 wallet = Wallet(user=account)
                 wallet.save()
+                cards = account.cards
+                Account.objects.filter(pk=int(serializer.data['user'])).update(cadrs=cards+1)
                 return response.Response(
                     {
                         'Status': 'Success',
@@ -48,6 +51,11 @@ class CreateWallet(viewsets.ModelViewSet):
                     },
                     status=status.HTTP_200_OK
                 )
+            #     return response.Response({
+            #         'Status': 'Fail',
+            #         'Message': "User can create just 3 cards",
+            #         'Data': []
+            # })
             return response.Response({
                 'Status': 'Fail',
                 'Message': "User has to verificate his email",
@@ -155,20 +163,55 @@ class TransferView(viewsets.ModelViewSet):
         })
 
 
-class TakeCreditView(viewsets.ModelViewSet):
+class TakeCreditView(viewsets.GenericViewSet, mixins.CreateModelMixin, mixins.ListModelMixin):
     queryset = Credit.objects.all()
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = serializers.CreditSerializer
-
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+        serializer = (self.get_serializer(data=request.data))
         serializer.is_valid(raise_exception=True)
-        if serializer.data['confidence']:
-            # if
-                self.perform_create(serializer)
-                headers = self.get_success_headers(serializer.data)
-                return response.Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-        return response.Response({
-            'message': "Account's confidence isn't True"
-            }, status=status.HTTP_406_NOT_ACCEPTABLE)
+        print(serializer.data)
+        user = Account.objects.get(pk=int(serializer.data['user']))
+        response_data = count_credit(user, float(serializer.data['salary']), serializer.data['pledge'],
+                            float(serializer.data['price']), float(serializer.data['paid']), bool(request.data["j_check"]))
+        headers = self.get_success_headers(serializer.data)
+        return response.Response(response_data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+
+class FindCredit(generics.ListAPIView):
+    queryset = Credit.objects.all()
+    serializer_class = serializers.CreditSerializer
+    permissions_classes = [permissions.IsAdminUser]
+
+    def get_queryset(self, *args, **kwargs):
+        q = self.request.GET.get('q')
+        f = self.request.GET.get('f')
+        if q and f is not None:
+            if f == 'iden_num' or f == 'username':
+                result = Credit.objects.search(q, f)
+                if result.exists():
+                    return result
+                return Credit.objects.none()
+            return Credit.objects.none()
+
+
+class FindTransfer(generics.ListAPIView):
+    queryset = Transfer.objects.all()
+    serializer_class = serializers.TransferSerializer
+    permissions_classes = [permissions.IsAdminUser]
+
+    def get_queryset(self, *args, **kwargs):
+        q = self.request.GET.get('q')
+        f = self.request.GET.get('f')
+        if q and f is not None:
+            if f == 'trans_num' or f == 'username':
+                result = Transfer.objects.search(q, f)
+                if result.exists():
+                    return result
+                return Transfer.objects.none()
+            return Transfer.objects.none()
+
+
+
 

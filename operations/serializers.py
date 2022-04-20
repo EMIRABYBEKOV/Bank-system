@@ -1,6 +1,9 @@
-from rest_framework import serializers
+from rest_framework import serializers, response, validators
 from .models import Wallet, Transfer, transfer_code, Credit
 from rest_framework.validators import UniqueTogetherValidator
+from datetime import datetime, date
+from dateutil.relativedelta import relativedelta
+from rest_framework.exceptions import ValidationError
 
 
 class WalletSerializer(serializers.ModelSerializer):
@@ -52,10 +55,11 @@ class TransferSerializer(serializers.ModelSerializer):
 
 
 class CreditSerializer(serializers.ModelSerializer):
-
+    j_check = serializers.BooleanField(default=False, write_only=True)
     class Meta:
         model = Credit
         fields = (
+            'j_check',
             'identification_number',
             'user',
             'salary',
@@ -66,26 +70,27 @@ class CreditSerializer(serializers.ModelSerializer):
             'credit_long',
             'date_taking',
             'date_payment',
+            'every_month',
+            'notices',
+            'approval',
         )
         extra_kwargs = {
             'date_taking': {'read_only': True},
+            'identification_number': {'read_only': True},
+            'every_month': {'read_only': True},
+            'date_payment': {'read_only': True},
+            'final_amount': {'read_only': True},
+            'notices': {'read_only': True},
+            'approval': {'read_only': True},
+
         }
 
-    def save(self):
-        credit = Credit(
-            identification_number=self.validated_data['identification_number'],
-            user=self.validated_data['user'],
-            salary=self.validated_data['salary'],
-            pledge=self.validated_data['pledge'],
-            price=self.validated_data['price'],
-            final_amount=self.validated_data['final_amount'],
-            paid=99999,#self.validated_data['9999'],
-            date_payment=self.validated_data['date_payment'],
-            credit_long=self.validated_data['credit_long'],
-        )
+    def validate(self, validated_data):
+        salary = validated_data['salary']
+        pledge = validated_data['pledge']
+        price = validated_data['price']
+        if (70 <= salary and 300 <= price <= 10000 and pledge == "consumer") or \
+            (1500 <= salary and 10000 <= price <= 1000000 and pledge == "mortgage"):
+            return validated_data
 
-        credit.save()
-
-
-
-
+        raise ValidationError({"Status": "Error", "Message": "Please check rules how to full the blank"})

@@ -91,6 +91,7 @@ class Account(AbstractUser):
     verification_code = models.CharField(max_length=6, default=get_code)
     verification = models.BooleanField(default=False)
     confidence = models.BooleanField(default=False)
+    cards = models.PositiveIntegerField(default=0)
 
 
     objects = AccountManager()
